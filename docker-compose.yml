@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "9001:9001"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    networks:
+      - microservices-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      # Override the route URI to point to the docker container name
+      - SPRING_CLOUD_GATEWAY_ROUTES_0_URI=http://user-service:9001
+    depends_on:
+      - user-service
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    driver: bridge
