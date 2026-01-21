@@ -19,6 +19,7 @@
         <java.version>17</java.version>
         <spring-boot.version>3.4.1</spring-boot.version> <spring-cloud.version>2024.0.0</spring-cloud.version>
         <jjwt.version>0.12.3</jjwt.version>
+        <jcc.version>11.5.9.0</jcc.version>
     </properties>
 
     <dependencyManagement>
@@ -57,6 +58,11 @@
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
             </dependency>
+                <dependency>
+                    <groupId>com.ibm.db2</groupId>
+                    <artifactId>jcc</artifactId>
+                    <version>${jcc.version}</version>
+                </dependency>
         </dependencies>
     </dependencyManagement>
     <build>

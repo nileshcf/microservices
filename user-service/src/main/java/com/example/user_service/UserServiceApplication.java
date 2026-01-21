@@ -3,7 +3,7 @@ package com.example.user_service;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.example","com.example.common"})
 public class UserServiceApplication {
 
 	public static void main(String[] args) {
