@@ -1,0 +1,26 @@
+server:
+  port: 8080  # Standard Gateway port (8085 is fine too, but 8080 is common)
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # Optional: Allows default routing based on service name
+      routes:
+        - id: user-service-route
+          # CHANGE 1: Use 'lb://' (Load Balancer) instead of 'http://'
+          # This tells Gateway: "Ask Eureka where 'USER-SERVICE' is"
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+          filters:
+            # CHANGE 2: Be careful with StripPrefix (Explanation below)
+            - StripPrefix=1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
