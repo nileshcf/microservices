@@ -1,0 +1,17 @@
+server:
+  port: 8082 # Distinct port for Catalog
+
+spring:
+  application:
+    name: catalog-service
+  data:
+    mongodb:
+      # If running locally without auth:
+      uri: mongodb://localhost:27017/hotstar_catalog
+      # If using Docker/Cloud, it looks like:
+      # uri: mongodb+srv://<user>:<password>@cluster0.mongodb.net/hotstar_catalog
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

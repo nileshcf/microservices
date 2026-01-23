@@ -19,6 +19,12 @@ spring:
           filters:
             # CHANGE 2: Be careful with StripPrefix (Explanation below)
             - StripPrefix=1
+        - id: catalog-service-route
+          uri: lb://catalog-service
+          predicates:
+            - Path=/catalog/**
+          filters:
+            - StripPrefix=0 
 
 eureka:
   client:
