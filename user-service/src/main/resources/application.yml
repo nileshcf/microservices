@@ -3,6 +3,9 @@ server:
 spring:
   application:
     name: user-service
+  profiles:
+    active: dev
+
 eureka:
   client:
     service-url:

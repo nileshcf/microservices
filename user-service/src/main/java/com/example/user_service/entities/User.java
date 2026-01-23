@@ -1,31 +1,30 @@
 package com.example.user_service.entities;
 
-
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import java.util.List;
 
-@Getter
-@Setter
 @Entity
-@Table(name = "users")
+@Table(name = "users") // Good practice to pluralize table names
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID) // UUID is safer for public IDs
+    private String id;
 
-    @Column(unique = true)
-    private String username;
-
-    @Column
-    private String password;
-
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
-    @Column
-    private String name;
+    @Column(nullable = false)
+    private String password; // BCrypt Hash
 
+    private String phoneNumber; // Critical for Indian market (Hotstar uses this)
 
+    // A User has many Profiles (e.g., "Dad", "Mom", "Kids")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<UserProfile> profiles;
 }
