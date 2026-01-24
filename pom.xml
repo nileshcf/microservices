@@ -19,7 +19,8 @@
 
     <properties>
         <java.version>17</java.version>
-        <spring-boot.version>3.4.1</spring-boot.version> <spring-cloud.version>2024.0.0</spring-cloud.version>
+        <spring-boot.version>3.3.6</spring-boot.version>
+        <spring-cloud.version>2023.0.4</spring-cloud.version>
         <jjwt.version>0.12.3</jjwt.version>
         <jcc.version>11.5.9.0</jcc.version>
     </properties>

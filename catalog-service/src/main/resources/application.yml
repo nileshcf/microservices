@@ -1,15 +1,15 @@
 server:
-  port: 8082 # Distinct port for Catalog
+  port: 8082
 
 spring:
   application:
     name: catalog-service
   data:
     mongodb:
-      # If running locally without auth:
-      uri: mongodb://localhost:27017/hotstar_catalog
-      # If using Docker/Cloud, it looks like:
-      # uri: mongodb+srv://<user>:<password>@cluster0.mongodb.net/hotstar_catalog
+      uri: mongodb+srv://hotstar_dev:hotstar_dev@123@cluster0.owucl7h.mongodb.net/hotstar_catalog?appName=cluster0
+    redis:
+      url: rediss://default:AVjTAAIncDIxNmUzODE3NzVmMWM0YWJiODAwOTZjMDI0NDY3YjlkYnAyMjI3Mzk@alive-titmouse-22739.upstash.io:6379
+
 
 eureka:
   client:

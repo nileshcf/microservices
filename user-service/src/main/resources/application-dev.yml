@@ -1,16 +1,16 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:userdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
+    # NEON Cloud Database Connection
+    url: jdbc:postgresql://ep-wispy-grass-ahm5qrep-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: npg_GJ1reSBh3NgU
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: update  # Automatically creates tables in the cloud
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true # Optional: Makes logs easier to read
     show-sql: true
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
