@@ -1,11 +1,33 @@
 server:
   port: 8080  # Standard Gateway port (8085 is fine too, but 8080 is common)
 
+jwt:
+  access-secret: 7c41b134c9f40a58708c0d7b67ccea40
+  refresh-secret: 3b842a72031ec37f34b3a563014bde8c
+  access-token-expiry: 900000
+  refresh-token-expiry: 2592000000
+  prefix: "Bearer "
+
 spring:
   application:
     name: api-gateway
   cloud:
     gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
       discovery:
         locator:
           enabled: true # Optional: Allows default routing based on service name

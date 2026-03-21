@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "user_profiles")               // ✅ explicit table name
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,13 +15,16 @@ public class UserProfile {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private String id;
 
-	private String name; // e.g., "Rohan"
+	@Column(nullable = false)
+	private String name;
 
-	private String avatarUrl; // e.g., "images/avatars/ironman.png"
+	@Column
+	private Long phoneNumber;                 // ✅ not mandatory at registration
 
-	private boolean isKid; // If true, filter out 'A' rated content in Catalog Service
+	@Column
+	private String avatarUrl;
 
-	@ManyToOne
-	@JoinColumn(name = "user_id")
+	@OneToOne                                 // ✅ OneToOne not ManyToOne
+	@JoinColumn(name = "user_id", unique = true)
 	private User user;
 }

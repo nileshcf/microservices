@@ -2,6 +2,8 @@ package com.example.common.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,20 +14,64 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
-    private final SecretKey key;
+    private final SecretKey accessKey;
+    private final SecretKey refreshKey;
+    private final JwtValidator jwtValidator;  // inject validator
 
-    public JwtTokenProvider() {
-        // Ensure JwtConstants.SECRET is at least 32 characters long!
-        this.key = Keys.hmacShaKeyFor(JwtConstants.SECRET.getBytes(StandardCharsets.UTF_8));
+    // ✅ Secrets injected from yml
+    public JwtTokenProvider(
+		    @Value("${jwt.access-secret}") String accessSecret,
+		    @Value("${jwt.refresh-secret}") String refreshSecret, JwtValidator jwtValidator) {
+
+        this.accessKey  = Keys.hmacShaKeyFor(accessSecret.getBytes(StandardCharsets.UTF_8));
+        this.refreshKey = Keys.hmacShaKeyFor(refreshSecret.getBytes(StandardCharsets.UTF_8));
+	    this.jwtValidator = jwtValidator;
     }
 
-    public String generateToken(String username, Map<String, Object> claims) {
+    // ─────────────────────────────────────────
+    // GENERATE
+    // ─────────────────────────────────────────
+
+    public String generateAccessToken(String username, Map<String, Object> claims, long expiresIn) {
         return Jwts.builder()
-                .setClaims(claims) // Note: .setClaims in newer JJWT versions overwrites previous. Use .addClaims if needed.
-                .setSubject(username) // Subject must be set AFTER claims if using setClaims
+                .setSubject(username)
+                .addClaims(claims)
+                .claim("type", "access")
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                .signWith(key)
+                .setExpiration(new Date(System.currentTimeMillis() + expiresIn))
+                .signWith(accessKey)
                 .compact();
+    }
+
+    public String generateRefreshToken(String username, long expiresIn) {
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("type", "refresh")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiresIn))
+                .signWith(refreshKey)
+                .compact();
+    }
+
+    // ─────────────────────────────────────────
+    // EXTRACT — delegates validation to JwtValidator
+    // ─────────────────────────────────────────
+
+    public String extractUsernameFromAccessToken(String token) {
+        return jwtValidator.validateAccessToken(token).getSubject();
+    }
+
+    public String extractUsernameFromRefreshToken(String token) {
+        return jwtValidator.validateRefreshToken(token).getSubject();
+    }
+
+    // ─────────────────────────────────────────
+    // REFRESH FLOW
+    // ─────────────────────────────────────────
+
+    public String refreshAccessToken(String refreshToken, Map<String, Object> claims, long accessExpiresIn) {
+        // Validator handles all checks internally
+        String username = extractUsernameFromRefreshToken(refreshToken);
+        return generateAccessToken(username, claims, accessExpiresIn);
     }
 }

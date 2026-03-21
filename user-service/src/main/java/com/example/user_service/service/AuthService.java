@@ -1,22 +1,30 @@
 package com.example.user_service.service;
 
+import com.example.common.security.JwtConstants;
 import com.example.common.security.JwtTokenProvider; // Import from Common
-import com.example.user_service.dto.AuthResponse;
+import com.example.user_service.dto.LoginResponse;
 import com.example.user_service.dto.LoginRequest;
+import com.example.user_service.dto.RegisterResponse;
 import com.example.user_service.dto.SignupRequest;
 import com.example.user_service.entities.User;
 import com.example.user_service.entities.UserProfile;
+import com.example.user_service.enums.Roles;
 import com.example.user_service.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -26,50 +34,71 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthResponse register(SignupRequest request) {
+    @Transactional
+    public RegisterResponse register(SignupRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new RuntimeException("Email already taken");
         }
 
         // 1. Create User
         User user = new User();
+        user.setUsername(request.userName());
         user.setEmail(request.email());
+        user.setEmailVerified(false);
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setPhoneNumber(request.phoneNumber());
+        user.setRoles(List.of(Roles.ROLE_USER));
+        user.setCreatedAt(LocalDateTime.now());
 
-        // 2. Create Default Profile
-        UserProfile defaultProfile = UserProfile.builder()
-                .name("My Profile")
-                .isKid(false)
+
+        UserProfile profile = UserProfile.builder()
                 .user(user)
                 .build();
-        user.setProfiles(List.of(defaultProfile));
 
+        user.setProfile(profile);
         userRepository.save(user);
 
-        // 3. Generate Token
-        // Add extra data to token payload if needed (e.g., roles)
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", "ROLE_USER");
+        log.info("User {} registered successfully", user.getEmail());
 
-        String token = jwtTokenProvider.generateToken(user.getEmail(), claims);
-
-        return new AuthResponse(token, "User registered successfully");
+        return new RegisterResponse("User registered successfully", user.getEmail(), user.getId(), user.getCreatedAt());
     }
 
-    public AuthResponse login(LoginRequest request) {
-        // 1. Authenticate
+    public LoginResponse login(LoginRequest request) {
+
+        // 1. Authenticate first — throws exception if credentials wrong
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
 
-        // 2. Prepare Claims
+        // 2. Fetch user — guaranteed to exist after authentication passes
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 3. Convert Enum roles to Strings for JWT
+        List<String> roleStrings = user.getRoles().stream()
+                .map(Roles::name)                         // ROLE_USER enum → "ROLE_USER" String
+                .collect(Collectors.toList());
+
+        // 4. Prepare Claims
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", "ROLE_USER"); // You can fetch real roles from DB here
+        claims.put("userId", user.getId());
+        claims.put("roles", roleStrings);                 // ✅ Strings in JWT, not Enum
+        claims.put("email", user.getEmail());
+        claims.put("username", user.getUsername());
 
-        // 3. Generate Token
-        String token = jwtTokenProvider.generateToken(request.email(), claims);
+        // 5. Generate tokens
+        String accessToken  = jwtTokenProvider.generateAccessToken(
+                request.email(), claims, JwtConstants.ACCESS_TOKEN_EXPIRY);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                request.email(), JwtConstants.REFRESH_TOKEN_EXPIRY);
 
-        return new AuthResponse(token, "Login Successful");
+        return new LoginResponse(
+                accessToken,
+                refreshToken,
+                "Bearer",
+                JwtConstants.ACCESS_TOKEN_EXPIRY / 1000,  // ✅ convert ms to seconds for frontend
+                user.getId(),
+                user.getEmail(),
+                roleStrings                               // ✅ return Strings not Enum to frontend
+        );
     }
 }

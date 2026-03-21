@@ -1,11 +1,16 @@
 package com.example.user_service.entities;
 
+import com.example.user_service.enums.Roles;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "users") // Good practice to pluralize table names
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,18 +18,33 @@ import java.util.List;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // UUID is safer for public IDs
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(unique = true, nullable = false)
+    private String username;
+
+    @Column(unique = true, nullable = false)  // ✅ unique + not null
     private String email;
 
     @Column(nullable = false)
-    private String password; // BCrypt Hash
+    private String password;
 
-    private String phoneNumber; // Critical for Indian market (Hotstar uses this)
+    @Column(nullable = false)
+    private boolean emailVerified = false;    // ✅ add this for email verification flow
 
-    // A User has many Profiles (e.g., "Dad", "Mom", "Kids")
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<UserProfile> profiles;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    private List<Roles> roles;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private UserProfile profile;              // ✅ back reference to profile
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

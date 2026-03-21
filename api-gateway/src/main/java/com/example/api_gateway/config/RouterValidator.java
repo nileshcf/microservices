@@ -9,15 +9,20 @@ import java.util.function.Predicate;
 @Component
 public class RouterValidator {
 
-	// List of endpoints that DO NOT require a token
+	// Must match pathMatchers in GatewaySecurityConfig
 	public static final List<String> openApiEndpoints = List.of(
-			"/auth/register",
-			"/auth/login",
+			"/user/auth/register",
+			"/user/auth/login",
+			"/user/auth/refresh",
+			"/user/auth/forgot-password",
+			"/user/auth/reset-password",
+			"/actuator/health",
 			"/eureka"
 	);
 
+	// ✅ startsWith — precise matching
 	public Predicate<ServerHttpRequest> isSecured =
 			request -> openApiEndpoints
 					.stream()
-					.noneMatch(uri -> request.getURI().getPath().contains(uri));
+					.noneMatch(uri -> request.getURI().getPath().startsWith(uri));
 }
