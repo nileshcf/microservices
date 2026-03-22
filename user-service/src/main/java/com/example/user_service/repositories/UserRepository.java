@@ -10,4 +10,6 @@ public interface UserRepository extends JpaRepository<User, String> {
 
 	// Used for Registration checks
 	Boolean existsByEmail(String email);
+
+	boolean existsByUsernameAndEmailNot(String username, String email);
 }

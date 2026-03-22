@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "user_profiles")               // ✅ explicit table name
+@Table(name = "user_profiles")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,16 +15,16 @@ public class UserProfile {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private String id;
 
-	@Column(nullable = false)
+	@Column
 	private String name;
 
 	@Column
-	private Long phoneNumber;                 // ✅ not mandatory at registration
+	private Long phoneNumber;
 
 	@Column
 	private String avatarUrl;
 
-	@OneToOne                                 // ✅ OneToOne not ManyToOne
+	@OneToOne
 	@JoinColumn(name = "user_id", unique = true)
 	private User user;
 }

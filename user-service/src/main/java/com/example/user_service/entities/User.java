@@ -24,14 +24,14 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(unique = true, nullable = false)  // ✅ unique + not null
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)
-    private boolean emailVerified = false;    // ✅ add this for email verification flow
+    private boolean emailVerified = false;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
@@ -40,7 +40,7 @@ public class User {
     private List<Roles> roles;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private UserProfile profile;              // ✅ back reference to profile
+    private UserProfile profile;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -42,7 +42,7 @@ public class AuthService {
 
         // 1. Create User
         User user = new User();
-        user.setUsername(request.userName());
+        user.setUsername(request.username());
         user.setEmail(request.email());
         user.setEmailVerified(false);
         user.setPassword(passwordEncoder.encode(request.password()));
@@ -52,6 +52,7 @@ public class AuthService {
 
         UserProfile profile = UserProfile.builder()
                 .user(user)
+                .phoneNumber(request.phoneNumber())
                 .build();
 
         user.setProfile(profile);
