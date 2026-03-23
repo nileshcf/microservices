@@ -66,9 +66,14 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
 
         // 1. Authenticate first — throws exception if credentials wrong
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            );
+        } catch (Exception e) {
+            log.error("Authentication failed: {}", e.getMessage());  // ✅ see exact error
+            throw e;
+        }
 
         // 2. Fetch user — guaranteed to exist after authentication passes
         User user = userRepository.findByEmail(request.email())

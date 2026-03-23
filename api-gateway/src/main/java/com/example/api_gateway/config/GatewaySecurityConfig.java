@@ -36,6 +36,9 @@ public class GatewaySecurityConfig {
                 .securityContextRepository(securityContextRepository)
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers("/user/auth/login").permitAll()      // ✅ explicit
+                        .pathMatchers("/user/auth/register").permitAll()   // ✅ explicit
+                        .pathMatchers("/user/auth/refresh").permitAll()
                         .pathMatchers("/user/auth/**").permitAll()
                         .pathMatchers("/actuator/health").permitAll()
                         .anyExchange().authenticated()
