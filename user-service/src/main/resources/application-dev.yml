@@ -1,6 +1,5 @@
 spring:
   datasource:
-    # NEON Cloud Database Connection
     url: jdbc:postgresql://ep-wispy-grass-ahm5qrep-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
     username: neondb_owner
     password: npg_GJ1reSBh3NgU
@@ -8,9 +7,16 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # Automatically creates tables in the cloud
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true # Optional: Makes logs easier to read
+        format_sql: true
     show-sql: true
+
+  # ✅ Add Redis — you already have Upstash Redis URL from earlier
+  data:
+    redis:
+      url: rediss://default:AVjTAAIncDIxNmUzODE3NzVmMWM0YWJiODAwOTZjMDI0NDY3YjlkYnAyMjI3Mzk@alive-titmouse-22739.upstash.io:6379
+    mongodb:
+      uri: mongodb+srv://hotstar_dev:hotstar_dev@123@cluster0.owucl7h.mongodb.net/hotstar_catalog?appName=cluster0

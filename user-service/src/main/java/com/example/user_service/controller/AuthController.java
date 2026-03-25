@@ -1,10 +1,8 @@
 package com.example.user_service.controller;
 
-import com.example.user_service.dto.LoginResponse;
-import com.example.user_service.dto.LoginRequest;
-import com.example.user_service.dto.RegisterResponse;
-import com.example.user_service.dto.SignupRequest;
+import com.example.user_service.dto.*;
 import com.example.user_service.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
@@ -26,5 +24,17 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshResponse> refresh(
+            @RequestBody @Valid RefreshRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<LogoutResponse> logout(
+            @RequestHeader("X-User-Email") String email,
+            @RequestBody @Valid LogoutRequest request) {
+        return ResponseEntity.ok(authService.logout(request, email));
     }
 }

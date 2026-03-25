@@ -65,13 +65,4 @@ public class JwtTokenProvider {
         return jwtValidator.validateRefreshToken(token).getSubject();
     }
 
-    // ─────────────────────────────────────────
-    // REFRESH FLOW
-    // ─────────────────────────────────────────
-
-    public String refreshAccessToken(String refreshToken, Map<String, Object> claims, long accessExpiresIn) {
-        // Validator handles all checks internally
-        String username = extractUsernameFromRefreshToken(refreshToken);
-        return generateAccessToken(username, claims, accessExpiresIn);
-    }
 }

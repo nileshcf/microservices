@@ -2,17 +2,17 @@ package com.example.user_service.service;
 
 import com.example.common.security.JwtConstants;
 import com.example.common.security.JwtTokenProvider; // Import from Common
-import com.example.user_service.dto.LoginResponse;
-import com.example.user_service.dto.LoginRequest;
-import com.example.user_service.dto.RegisterResponse;
-import com.example.user_service.dto.SignupRequest;
+import com.example.common.security.JwtValidator;
+import com.example.user_service.dto.*;
 import com.example.user_service.entities.User;
 import com.example.user_service.entities.UserProfile;
 import com.example.user_service.enums.Roles;
 import com.example.user_service.repositories.UserRepository;
+import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,6 +34,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtValidator jwtValidator;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional
     public RegisterResponse register(SignupRequest request) {
@@ -106,5 +109,92 @@ public class AuthService {
                 user.getEmail(),
                 roleStrings                               // ✅ return Strings not Enum to frontend
         );
+    }
+    public RefreshResponse refreshToken(RefreshRequest request) {
+        log.info("Refresh token request received");
+
+        // 1. Validate refresh token
+        Claims claims;
+        try {
+            claims = jwtValidator.validateRefreshToken(request.refreshToken());
+        } catch (Exception e) {
+            log.warn("Invalid refresh token: {}", e.getMessage());
+            throw new RuntimeException("Refresh token is expired or invalid. Please login again");
+        }
+
+        // 2. Check Redis blacklist
+        String blacklistKey = "blacklist:" + request.refreshToken();
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
+            log.warn("Blacklisted refresh token used");
+            throw new RuntimeException("Refresh token has been invalidated. Please login again");
+        }
+
+        // 3. Extract email from claims
+        String email = claims.getSubject();
+
+        // 4. Fetch user from DB
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<String> roleStrings = user.getRoles().stream()
+                .map(Roles::name)
+                .collect(Collectors.toList());
+
+        // 5. Build claims
+        Map<String, Object> newClaims = new HashMap<>();
+        newClaims.put("userId", user.getId());
+        newClaims.put("roles", roleStrings);
+        newClaims.put("email", user.getEmail());
+        newClaims.put("username", user.getUsername());
+
+        // 6. Generate new access token
+        String newAccessToken = jwtTokenProvider.generateAccessToken(
+                email,
+                newClaims,
+                JwtConstants.ACCESS_TOKEN_EXPIRY
+        );
+
+        log.debug("New access token generated for: {}", email);
+
+        return new RefreshResponse(
+                newAccessToken,
+                "Bearer",
+                JwtConstants.ACCESS_TOKEN_EXPIRY / 1000
+        );
+    }
+
+    public LogoutResponse logout(LogoutRequest request, String email) {
+        log.info("Logout request received for: {}", email);
+
+        // 1. Validate refresh token
+        Claims claims;
+        try {
+            claims = jwtValidator.validateRefreshToken(request.refreshToken());
+        } catch (Exception e) {
+            log.warn("Invalid refresh token during logout: {}", e.getMessage());
+            throw new RuntimeException("Refresh token is expired or invalid");
+        }
+
+        // 2. Calculate remaining TTL
+        long remainingTTL = claims.getExpiration().getTime() - System.currentTimeMillis();
+
+        if (remainingTTL <= 0) {
+            // Token already expired — no need to blacklist
+            log.debug("Refresh token already expired for: {}", email);
+            return new LogoutResponse("Logged out successfully");
+        }
+
+        // 3. Blacklist refresh token in Redis
+        String blacklistKey = "blacklist:" + request.refreshToken();
+        redisTemplate.opsForValue().set(
+                blacklistKey,
+                email,              // store email as value — useful for debugging
+                remainingTTL,
+                TimeUnit.MILLISECONDS
+        );
+
+        log.info("Refresh token blacklisted for: {} TTL: {}ms", email, remainingTTL);
+
+        return new LogoutResponse("Logged out successfully");
     }
 }
